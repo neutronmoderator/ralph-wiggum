@@ -7,7 +7,7 @@ set -e
 
 gum style --border double --padding "1 2" --border-foreground 212 "ralph-wiggum" "I'm helping!"
 
-MAX_ITERATIONS=1
+MAX_ITERATIONS=${1:-1}
 
 for ((i=1; i<=MAX_ITERATIONS; i++)); do
   gum spin --spinner dot --title "Iteration $i of $MAX_ITERATIONS" -- sleep 0.5

@@ -1,5 +1,4 @@
-## Add shell.nix + gum enhancements
-
-- Added shell.nix with gum from charm.sh
-- Enhanced ralph-wiggum script: fancy border header, colored iteration text, spinner, styled completion/end messages
-- Files: shell.nix (new), ralph-wiggum (modified)
+## Iteration arg support
+- Task: Allow argument for loop iterations (PRD Planned #1)
+- Used bash parameter expansion ${1:-1} for simple default handling
+- Files changed: ralph-wiggum
