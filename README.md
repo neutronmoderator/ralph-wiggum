@@ -1,3 +1,5 @@
+![Ralph Wiggum](header-image.jpg)
+
 # ralph-wiggum
 
 > "I'm helping!"
