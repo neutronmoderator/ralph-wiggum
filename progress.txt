@@ -1,8 +1,5 @@
-## Loop iteration feature
+## Add shell.nix + gum enhancements
 
-- Task: Add loop around claude call (hardcoded to 1 iteration)
-- Added MAX_ITERATIONS=1 constant for easy future adjustment
-- Wrapped claude call in for loop with iteration counter display
-- Moved completion check inside loop - exits early on COMPLETE
-- Changed end message to indicate max iterations reached if no early exit
-- Files changed: ralph-wiggum
+- Added shell.nix with gum from charm.sh
+- Enhanced ralph-wiggum script: fancy border header, colored iteration text, spinner, styled completion/end messages
+- Files: shell.nix (new), ralph-wiggum (modified)
