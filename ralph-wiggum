@@ -55,113 +55,144 @@ EOF
 
 # --- Run command (default behavior) ---
 cmd_run() {
+    local open_in_browser=true
+
+    # Parse run-specific arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --no-open)
+                open_in_browser=false
+                shift
+                ;;
+            *)
+                echo "Unknown option: $1"
+                echo "Usage: ralph-wiggum run [--no-open]"
+                exit 1
+                ;;
+        esac
+    done
+
     # Check for clean working directory
-if [[ -n "$(git status --porcelain)" ]]; then
-    echo "Error: working directory not clean. Commit or stash changes first."
-    exit 1
-fi
-
-# Get default branch name
-default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
-
-# Fetch open issues
-echo "Fetching issues..."
-issues=$(gh issue list --state open --json number,title,body --limit 20)
-total=$(echo "$issues" | jq 'length')
-
-if [[ "$total" -eq 0 ]]; then
-    echo "No open issues found."
-    exit 0
-fi
-
-echo "Found ${total} open issues"
-echo ""
-
-# Track stats
-created=0
-skipped=0
-nochange=0
-i=0
-
-# Process each issue
-echo "$issues" | jq -c '.[]' | while read -r issue; do
-    ((i++)) || true
-    number=$(echo "$issue" | jq -r '.number')
-    title=$(echo "$issue" | jq -r '.title')
-    body=$(echo "$issue" | jq -r '.body // ""')
-    branch="issue-${number}"
-
-    echo "[${i}/${total}] Issue #${number}: ${title}"
-
-    # Skip if branch already exists
-    if git branch -a 2>/dev/null | grep -qE "(^|\s)${branch}$|origin/${branch}$"; then
-        echo "      → Skipping (branch already exists)"
-        ((skipped++)) || true
-        echo ""
-        continue
+    if [[ -n "$(git status --porcelain)" ]]; then
+        echo "Error: working directory not clean. Commit or stash changes first."
+        exit 1
     fi
 
-    # Ensure we're on default branch and up to date
-    echo "      → Creating branch ${branch}..."
-    git checkout "$default_branch" --quiet
-    git pull --ff-only --quiet 2>/dev/null || true
-    git checkout -b "$branch" --quiet
+    # Get default branch name
+    default_branch=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@' || echo "main")
 
-    # Build prompt
-    prompt="GitHub Issue #${number}: ${title}
+    # Fetch open issues
+    echo "Fetching issues..."
+    issues=$(gh issue list --state open --json number,title,body --limit 20)
+    total=$(echo "$issues" | jq 'length')
+
+    if [[ "$total" -eq 0 ]]; then
+        echo "No open issues found."
+        exit 0
+    fi
+
+    echo "Found ${total} open issues"
+    echo ""
+
+    # Track stats
+    created=0
+    skipped=0
+    nochange=0
+    i=0
+
+    # Process each issue
+    echo "$issues" | jq -c '.[]' | while read -r issue; do
+        ((i++)) || true
+        number=$(echo "$issue" | jq -r '.number')
+        title=$(echo "$issue" | jq -r '.title')
+        body=$(echo "$issue" | jq -r '.body // ""')
+        branch="issue-${number}"
+
+        echo "[${i}/${total}] Issue #${number}: ${title}"
+
+        # Skip if branch already exists
+        if git branch -a 2>/dev/null | grep -qE "(^|\s)${branch}$|origin/${branch}$"; then
+            echo "      → Skipping (branch already exists)"
+            ((skipped++)) || true
+            echo ""
+            continue
+        fi
+
+        # Ensure we're on default branch and up to date
+        echo "      → Creating branch ${branch}..."
+        git checkout "$default_branch" --quiet
+        git pull --ff-only --quiet 2>/dev/null || true
+        git checkout -b "$branch" --quiet
+
+        # Build prompt
+        prompt="GitHub Issue #${number}: ${title}
 
 ${body}
 
 ---
 Implement the changes requested in this issue. Make minimal, focused changes."
 
-    # Run Claude Code
-    echo "      → Running Claude Code..."
-    echo "$prompt" | claude -p --dangerously-skip-permissions || {
-        echo "      → Claude Code failed, cleaning up..."
-        git checkout "$default_branch" --quiet
-        git branch -D "$branch" --quiet 2>/dev/null || true
-        echo ""
-        continue
-    }
+        # Run Claude Code
+        echo "      → Running Claude Code..."
+        echo "$prompt" | claude -p --dangerously-skip-permissions || {
+            echo "      → Claude Code failed, cleaning up..."
+            git checkout "$default_branch" --quiet
+            git branch -D "$branch" --quiet 2>/dev/null || true
+            echo ""
+            continue
+        }
 
-    # Check if any changes were made
-    if git diff --quiet && git diff --cached --quiet; then
-        echo "      → No changes made"
-        git checkout "$default_branch" --quiet
-        git branch -D "$branch" --quiet
-        ((nochange++)) || true
-        echo ""
-        continue
-    fi
+        # Check if any changes were made
+        if git diff --quiet && git diff --cached --quiet; then
+            echo "      → No changes made"
+            git checkout "$default_branch" --quiet
+            git branch -D "$branch" --quiet
+            ((nochange++)) || true
+            echo ""
+            continue
+        fi
 
-    # Commit changes
-    echo "      → Committing changes..."
-    git add -A
-    git commit --quiet -m "fix: address issue #${number}
+        # Commit changes
+        echo "      → Committing changes..."
+        git add -A
+        git commit --quiet -m "fix: address issue #${number}
 
 ${title}"
 
-    # Push and create PR
-    echo "      → Creating PR..."
-    git push -u origin "$branch" --quiet 2>&1
-    gh pr create \
-        --title "Fix #${number}: ${title}" \
-        --body "Closes #${number}
+        # Push and create PR
+        echo "      → Creating PR..."
+        git push -u origin "$branch" --quiet 2>&1
+        pr_url=$(gh pr create \
+            --title "Fix #${number}: ${title}" \
+            --body "Closes #${number}
 
 Automated implementation by Claude Code." \
-        --head "$branch"
+            --head "$branch" 2>&1)
 
-    ((created++)) || true
-    echo "      ✓ PR created"
-    echo ""
+        ((created++)) || true
+        echo "      ✓ PR created: ${pr_url}"
+        echo "$pr_url" >> /tmp/ralph-wiggum-prs-$$
+        echo ""
 
-    # Return to default branch
-    git checkout "$default_branch" --quiet
-done
+        # Return to default branch
+        git checkout "$default_branch" --quiet
+    done
 
-echo "---"
-echo "Done: ${created} PRs created, ${skipped} skipped, ${nochange} no changes"
+    echo "---"
+    echo "Done: ${created} PRs created, ${skipped} skipped, ${nochange} no changes"
+
+    # Open PRs in browser if requested
+    pr_file="/tmp/ralph-wiggum-prs-$$"
+    if [[ -f "$pr_file" ]]; then
+        if [[ "$open_in_browser" == true ]]; then
+            echo ""
+            echo "Opening PRs in browser..."
+            while read -r url; do
+                gh pr view "$url" --web 2>/dev/null || true
+            done < "$pr_file"
+        fi
+        rm -f "$pr_file"
+    fi
 }
 
 # --- Main ---
@@ -170,18 +201,22 @@ case "${1:-run}" in
         cmd_install
         ;;
     run|"")
-        cmd_run
+        shift 2>/dev/null || true
+        cmd_run "$@"
         ;;
     -h|--help|help)
         echo "ralph-wiggum: Process GitHub issues with Claude Code"
         echo ""
         echo "Usage:"
-        echo "  ralph-wiggum [command]"
+        echo "  ralph-wiggum [command] [options]"
         echo ""
         echo "Commands:"
         echo "  run      Process open issues (default)"
         echo "  install  Add ralph-wiggum to a repo as a git submodule"
         echo "  help     Show this help"
+        echo ""
+        echo "Run options:"
+        echo "  --no-open  Don't open PRs in browser after creation"
         ;;
     *)
         echo "Unknown command: $1"
