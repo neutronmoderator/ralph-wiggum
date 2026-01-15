@@ -12,7 +12,7 @@ Ralph Wiggum is an automation script that uses Claude Code to work through tasks
 
 ## Planned
 
-(add your tasks here)
+- Add loop around claude call (hardcoded to 1 iteration)
 
 ---
 
