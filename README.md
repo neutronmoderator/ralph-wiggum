@@ -14,7 +14,25 @@ Processes GitHub issues with Claude Code, creates PRs automatically.
 
 ## Installation
 
-### As a git submodule (recommended)
+### Using the install command (recommended)
+
+From within your target repo, run:
+
+```bash
+curl -sL https://raw.githubusercontent.com/neutronmoderator/ralph-wiggum/main/ralph-wiggum | bash -s install
+```
+
+This will:
+- Add ralph-wiggum as a git submodule at `.ralph-wiggum/`
+- Create a wrapper script at the project root
+
+Then commit and run:
+```bash
+git add -A && git commit -m "Add ralph-wiggum"
+./ralph-wiggum
+```
+
+### Manual submodule setup
 
 ```bash
 git submodule add https://github.com/neutronmoderator/ralph-wiggum.git .ralph-wiggum
@@ -42,10 +60,13 @@ chmod +x ralph-wiggum
 ## Usage
 
 ```bash
-./ralph-wiggum
+./ralph-wiggum          # Process open issues
+./ralph-wiggum run      # Same as above
+./ralph-wiggum install  # Install as submodule in current repo
+./ralph-wiggum help     # Show help
 ```
 
-That's it. It will process up to 20 open issues.
+Running without arguments processes up to 20 open issues.
 
 ## Behavior
 
