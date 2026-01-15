@@ -56,6 +56,7 @@ EOF
 # --- Run command (default behavior) ---
 cmd_run() {
     local open_in_browser=true
+    local verbose=false
 
     # Parse run-specific arguments
     while [[ $# -gt 0 ]]; do
@@ -64,9 +65,13 @@ cmd_run() {
                 open_in_browser=false
                 shift
                 ;;
+            -v|--verbose)
+                verbose=true
+                shift
+                ;;
             *)
                 echo "Unknown option: $1"
-                echo "Usage: ralph-wiggum run [--no-open]"
+                echo "Usage: ralph-wiggum run [--no-open] [-v|--verbose]"
                 exit 1
                 ;;
         esac
@@ -134,13 +139,41 @@ Implement the changes requested in this issue. Make minimal, focused changes."
 
         # Run Claude Code
         echo "      → Running Claude Code..."
-        echo "$prompt" | claude -p --dangerously-skip-permissions || {
-            echo "      → Claude Code failed, cleaning up..."
-            git checkout "$default_branch" --quiet
-            git branch -D "$branch" --quiet 2>/dev/null || true
-            echo ""
-            continue
-        }
+        if $verbose; then
+            echo "      ┌─────────────────────────────────────"
+            echo "$prompt" | claude -p --dangerously-skip-permissions 2>&1 | sed 's/^/      │ /' || {
+                echo "      └─────────────────────────────────────"
+                echo "      → Claude Code failed, cleaning up..."
+                git checkout "$default_branch" --quiet
+                git branch -D "$branch" --quiet 2>/dev/null || true
+                echo ""
+                continue
+            }
+            echo "      └─────────────────────────────────────"
+        else
+            # Stream JSON and show progress indicators
+            echo "$prompt" | claude -p --dangerously-skip-permissions --output-format stream-json 2>&1 | \
+            while IFS= read -r line; do
+                type=$(echo "$line" | jq -r '.type // empty' 2>/dev/null)
+                case "$type" in
+                    assistant)
+                        # Show a dot for each assistant message chunk
+                        printf "." >&2
+                        ;;
+                    result)
+                        # Show final result summary
+                        printf "\n" >&2
+                        ;;
+                esac
+            done || {
+                echo ""
+                echo "      → Claude Code failed, cleaning up..."
+                git checkout "$default_branch" --quiet
+                git branch -D "$branch" --quiet 2>/dev/null || true
+                echo ""
+                continue
+            }
+        fi
 
         # Check if any changes were made
         if git diff --quiet && git diff --cached --quiet; then
@@ -216,7 +249,8 @@ case "${1:-run}" in
         echo "  help     Show this help"
         echo ""
         echo "Run options:"
-        echo "  --no-open  Don't open PRs in browser after creation"
+        echo "  --no-open   Don't open PRs in browser after creation"
+        echo "  -v|--verbose  Show full Claude Code output"
         ;;
     *)
         echo "Unknown command: $1"
