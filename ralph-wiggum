@@ -7,12 +7,20 @@ set -e
 
 echo "=== Starting ralph-wiggum ==="
 
-result=$(claude --dangerously-skip-permissions -p "$(cat prompt.md)" 2>&1 | tee /dev/stderr)
+MAX_ITERATIONS=1
 
-echo ""
-echo "=== End ==="
+for ((i=1; i<=MAX_ITERATIONS; i++)); do
+  echo "=== Iteration $i of $MAX_ITERATIONS ==="
 
-if [[ "$result" == *"<promise>COMPLETE</promise>"* ]]; then
-  echo "PRD complete!"
-  exit 0
-fi
+  result=$(claude --dangerously-skip-permissions -p "$(cat prompt.md)" 2>&1 | tee /dev/stderr)
+
+  if [[ "$result" == *"<promise>COMPLETE</promise>"* ]]; then
+    echo ""
+    echo "=== PRD complete! ==="
+    exit 0
+  fi
+
+  echo ""
+done
+
+echo "=== End (max iterations reached) ==="
