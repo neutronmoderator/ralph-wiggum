@@ -1,4 +1,1 @@
-## Iteration arg support
-- Task: Allow argument for loop iterations (PRD Planned #1)
-- Used bash parameter expansion ${1:-1} for simple default handling
-- Files changed: ralph-wiggum
+fibonacci.py: Python script w/ inline uv deps (PEP 723 script metadata). 0-indexed fib(n). Files: fibonacci.py
