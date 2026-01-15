@@ -1,5 +1,0 @@
-Fix <promise>COMPLETE</promise> conditional never executing
-- PRD: investigate why conditional never executes
-- Root cause: prompt ambiguous about when to output COMPLETE. Said "if all work complete" at end but also "ONLY WORK ON SINGLE FEATURE" - Claude interprets as: do one task, stop. Never reaches empty-Planned state in same session.
-- Fix: restructured prompt.md to check Planned FIRST. If empty ’ COMPLETE. Otherwise work on one task then stop.
-- Files: prompt.md

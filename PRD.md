@@ -16,7 +16,7 @@ Ralph Wiggum is an automation script that uses Claude Code to work through tasks
 
 ## Planned
 
-(none)
+- say I want this project to hit 1.0 now and we want to be able to very quickly import this project into another project as a template. What would
 
 ---
 

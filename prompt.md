@@ -8,11 +8,12 @@ Otherwise, proceed with ONE task:
    Pick the one YOU decide has highest priority, not necessarily the first.
 2. Implement the feature.
 3. Check any open feedback loops, such as types and tests.
-4. Append your progress to progress.txt with:
+4. After completing each task from the PRD, append your progress to progress.txt with:
 
 - Task completed and PRD item reference
 - Key decisions made and reasoning
 - Files changed
+- Any blockers or notes for the next iteration
 - Keep entries concise. Sacrifice grammar for the sake of concision.
 
 5. Make a git commit of that feature.
