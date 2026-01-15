@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# ralph-wiggum: "I'm helping!"
+set -e
+
+# Wipe progress.txt at start
+> progress.txt
+
+echo "=== Starting ralph-wiggum ==="
+
+result=$(claude --dangerously-skip-permissions -p \
+"@PRD.md @progress.txt
+1. Decide which task to work on next.
+   This should be the one YOU decide has the highest priority,
+   not necessarily the first in the list.
+2. Implement the feature.
+3. Check any feedback loops, such as types and tests.
+4. Append your progress to the progress.txt file.
+5. Make a git commit of that feature.
+6. Update the PRD document and move that feature to the 'In Review' section.
+
+ONLY WORK ON A SINGLE FEATURE.
+
+If all work is complete, output <promise>COMPLETE</promise>.
+" 2>&1 | tee /dev/stderr)
+
+echo ""
+echo "=== End ==="
+
+if [[ "$result" == *"<promise>COMPLETE</promise>"* ]]; then
+  echo "PRD complete!"
+  exit 0
+fi
