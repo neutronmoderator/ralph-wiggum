@@ -1,6 +1,6 @@
 @PRD.md @progress.txt
 
-1. Decide which task to work on next.
+1. Decide which task to work on next from the "Planned" section.
    This should be the one YOU decide has the highest priority,
    not necessarily the first in the list.
 2. Implement the feature.

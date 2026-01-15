@@ -1,4 +1,4 @@
-# Ralph Wiggum - PRD
+# Ralph Wiggum - Product Requirements Document
 
 Ralph Wiggum is an automation script that uses Claude Code to work through tasks defined in this document.
 
@@ -10,12 +10,19 @@ Ralph Wiggum is an automation script that uses Claude Code to work through tasks
 
 ---
 
+## In Review
+
+(none)
+
+---
+
 ## Planned
 
-- Add loop around claude call (hardcoded to 1 iteration)
+-
 
 ---
 
 ## Completed
 
-(none)
+- Add loop around claude call (hardcoded to 1 iteration)
+- Add shell.nix file with `gum` from charm.sh and enhance ralph-wiggum script with gum features for nicer output
